@@ -70,9 +70,13 @@ func UpdateIssue(repo, state, issueNumber *string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer resp.Body.Close()
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	s := string(bodyText)
-	log.Println(s)
+	if strings.Contains(s, "Not Found") {
+		log.Fatalf(" > Issue %s not found", *issueNumber)
+	}
+	fmt.Println(" > OK")
 
 }
 
