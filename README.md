@@ -15,4 +15,5 @@ Currently the only supported actions are:
 ## How to use
 
 > go build github_cli.go
+
 > ./github_cli list --repo golang/go --open is:open
