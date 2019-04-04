@@ -19,6 +19,11 @@ func main() {
 	issueNumber := updateCommand.String("issue", "", "the issue to update")
 	updateRepo := updateCommand.String("repo", "golang/go", "the repo for which to update fields")
 
+	createCommand := flag.NewFlagSet("create", flag.ExitOnError)
+	createTitle := createCommand.String("title", "", "the title of the issue")
+	createBody := createCommand.String("body", "", "the body of the issue")
+	createRepo := createCommand.String("repo", "golang/go", "the repo for which to create a new issue")
+
 	if len(os.Args) == 1 {
 		fmt.Println("usage: github_cli <command> [<args>]")
 		fmt.Println("Supported commands: ")
@@ -36,6 +41,10 @@ func main() {
 	case "update":
 		updateCommand.Parse(os.Args[2:])
 		handlers.UpdateIssue(updateRepo, state, issueNumber)
+
+	case "create":
+		createCommand.Parse(os.Args[2:])
+		handlers.CreateIssue(createRepo, createTitle, createBody)
 
 	default:
 		fmt.Printf("%q is not valid command.\n", os.Args[1])

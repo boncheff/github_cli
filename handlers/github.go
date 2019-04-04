@@ -79,6 +79,30 @@ func UpdateIssue(repo, state, issueNumber *string) {
 
 }
 
+// CreateIssue ...
+func CreateIssue(repo, title, body *string) {
+	postURL := fmt.Sprintf("https://api.github.com/repos/%s/issues", *repo)
+
+	var jsonStr = []byte(`{"title": "` + *title + `", "body": "` + *body + `"}`)
+
+	auth := getAuth()
+	req, err := http.NewRequest("POST", postURL, bytes.NewBuffer(jsonStr))
+	req.SetBasicAuth(auth.Username, auth.Password)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	_, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf(" > Could not create issue")
+	}
+	fmt.Println(" > OK")
+
+}
+
 func formatTitle(itemTitle string) string {
 	var title string
 	if len(itemTitle) > 80 {
