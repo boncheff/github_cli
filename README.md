@@ -4,8 +4,9 @@ This is a simple CLI written in Go that interacts with Github which (will eventu
 
 It requires that a .github.yaml file be present in the current directory. This file is used to authenticate the user and has the following format:
 
-_username: <github username>
-password: <github password>_
+> username: github username
+
+> password: github password
 
 Currently the only supported actions are:
 1. Listing issues by repo, state and terms
@@ -14,4 +15,5 @@ Currently the only supported actions are:
 ## How to use
 
 > go build github_cli.go
+
 > ./github_cli list --repo golang/go --open is:open
