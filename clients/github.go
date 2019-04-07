@@ -1,8 +1,6 @@
-package handlers
+package clients
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"github_cli/types"
 	"io/ioutil"
@@ -15,33 +13,34 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// GithubClient ...
+type GithubClient struct {
+	*BaseClient
+}
+
 // IssuesURL ...
 const IssuesURL = "https://api.github.com/search/issues"
 
 // SearchIssues ...
-func SearchIssues(repo, open *string, terms []string) {
+func (h *GithubClient) SearchIssues(repo, open *string, terms []string) {
 
 	terms = append(terms, "repo:"+*repo)
 	terms = append(terms, *open)
 	q := url.QueryEscape(strings.Join(terms, " "))
 
-	resp, err := http.Get(IssuesURL + "?q=" + q)
+	var result types.IssuesSearchResult
+	resp, err := h.Req.
+		SetResult(&result).
+		Get(IssuesURL + "?q=" + q)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
-		log.Fatalf("search query failed: %s", resp.Status)
+	if resp.StatusCode() != http.StatusOK {
+		log.Fatalf("search query failed: %s", resp.Error())
 	}
 
-	var result types.IssuesSearchResult
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		resp.Body.Close()
-		log.Fatal(err)
-	}
 	fmt.Printf("%d issue(s) for repo %q with state %q:\n\n", result.TotalCount, *repo, *open)
 	for _, item := range result.Items {
 		issueURL := fmt.Sprintf("https://github.com/%s/pull/%d", *repo, item.Number)
@@ -55,24 +54,23 @@ func SearchIssues(repo, open *string, terms []string) {
 }
 
 // UpdateIssue ...
-func UpdateIssue(repo, state, issueNumber *string) {
+func (h *GithubClient) UpdateIssue(repo, state, issueNumber *string) {
 	patchURL := fmt.Sprintf("https://api.github.com/repos/%s/issues/%s", *repo, *issueNumber)
 
 	var jsonStr = []byte(`{"state": "` + *state + `" }`)
 
 	auth := getAuth()
-	req, err := http.NewRequest("PATCH", patchURL, bytes.NewBuffer(jsonStr))
-	req.SetBasicAuth(auth.Username, auth.Password)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	req, err := h.Req.
+		SetBody(jsonStr).
+		SetBasicAuth(auth.Username, auth.Password).
+		SetHeader("Content-Type", "application/json").
+		Patch(patchURL)
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
 
-	bodyText, err := ioutil.ReadAll(resp.Body)
-	s := string(bodyText)
-	if strings.Contains(s, "Not Found") {
+	if req.StatusCode() == http.StatusNotFound {
 		log.Fatalf(" > Issue %s not found", *issueNumber)
 	}
 	fmt.Println(" > OK")
@@ -80,26 +78,32 @@ func UpdateIssue(repo, state, issueNumber *string) {
 }
 
 // CreateIssue ...
-func CreateIssue(repo, title, body *string) {
+func (h *GithubClient) CreateIssue(repo, title, body *string) {
 	postURL := fmt.Sprintf("https://api.github.com/repos/%s/issues", *repo)
 
 	var jsonStr = []byte(`{"title": "` + *title + `", "body": "` + *body + `"}`)
 
+	var postResult struct {
+		Number int `json:"number"`
+	}
+
 	auth := getAuth()
-	req, err := http.NewRequest("POST", postURL, bytes.NewBuffer(jsonStr))
-	req.SetBasicAuth(auth.Username, auth.Password)
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	req, err := h.Req.
+		SetBody(jsonStr).
+		SetBasicAuth(auth.Username, auth.Password).
+		SetResult(&postResult).
+		SetHeader("Content-Type", "application/json").
+		Post(postURL)
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer resp.Body.Close()
 
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf(" > Could not create issue")
+	if req.StatusCode() != http.StatusCreated {
+		log.Fatalf("Error creating issue")
 	}
-	fmt.Println(" > OK")
+
+	fmt.Printf(" > Created issue #%d\n", postResult.Number)
 
 }
 

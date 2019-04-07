@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github_cli/handlers"
+	"github_cli/clients"
 	"os"
 	"strings"
+
+	resty "gopkg.in/resty.v0"
 )
 
 func main() {
@@ -24,6 +26,12 @@ func main() {
 	createBody := createCommand.String("body", "", "the body of the issue")
 	createRepo := createCommand.String("repo", "golang/go", "the repo for which to create a new issue")
 
+	ghHandler := clients.GithubClient{
+		BaseClient: &clients.BaseClient{
+			Req: resty.SetRetryCount(3).R(),
+		},
+	}
+
 	if len(os.Args) == 1 {
 		fmt.Println("usage: github_cli <command> [<args>]")
 		fmt.Println("Supported commands: ")
@@ -37,15 +45,15 @@ func main() {
 	case "list":
 		listCommand.Parse(os.Args[2:])
 		queryTerms := strings.Split(*terms, " ")
-		handlers.SearchIssues(repo, listState, queryTerms)
+		ghHandler.SearchIssues(repo, listState, queryTerms)
 
 	case "update":
 		updateCommand.Parse(os.Args[2:])
-		handlers.UpdateIssue(updateRepo, state, issueNumber)
+		ghHandler.UpdateIssue(updateRepo, state, issueNumber)
 
 	case "create":
 		createCommand.Parse(os.Args[2:])
-		handlers.CreateIssue(createRepo, createTitle, createBody)
+		ghHandler.CreateIssue(createRepo, createTitle, createBody)
 
 	default:
 		fmt.Printf("%q is not valid command.\n", os.Args[1])
