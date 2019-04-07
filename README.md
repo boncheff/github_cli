@@ -1,16 +1,18 @@
 # Github CLI Interface
 
-This is a simple CLI written in Go that interacts with Github which (will eventually) make full use of [Github's issues CRUD API](https://developer.github.com/v3/issues/)
+This is a simple CLI written in [Go](https://golang.org/) that interacts with Github using the [Github's issues CRUD API](https://developer.github.com/v3/issues/)
 
-# Getting Started
+# Prerequisites
 
-In order to be able to run the program, you need to create a .github.yaml file in the current directory. This file is used to authenticate the user when talking to GitHub and has the following format:
+In order to be able to run the program, you need to create a *.github.yaml* file in the current directory. This file is used to authenticate the user when talking to GitHub and has the following format:
 
 ```
 username: <github username>
 
 password: <github password>
 ```
+
+# Getting Started
 
 Currently the CLI suports the following actions:
 1. Creating new issues
