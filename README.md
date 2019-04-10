@@ -28,5 +28,5 @@ go build github_cli.go
 
 ./github_cli create --repo golang/go --title "Issue Title" --body "Issue body"
 
-./github_cli.go update --repo golang/go --issue 359 --state closed
+./github_cli update --repo golang/go --issue 359 --state closed
 ```
